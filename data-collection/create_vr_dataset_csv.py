@@ -3,12 +3,14 @@ from bs4 import BeautifulSoup
 import json
 import pandas as pd
 
+term = "vr"
+
 # initialize list of links
 links = []
 
-# get a list of links for channels while searching for "vr"
+# get a list of links for channels while searching for a given term
 for i in range(0,200,10):
-    r = requests.get("https://www.bing.com/search?q=vr%20site%3A%20https%3A%2F%2Fwww.youtube.com%2Fchannel%2F&first="+str(i))
+    r = requests.get("https://www.bing.com/search?q="+term+"%20site%3A%20https%3A%2F%2Fwww.youtube.com%2Fchannel%2F&first="+str(i))
     soup = BeautifulSoup(r.text,'html.parser')
     link_elements = soup.find_all('h2')
     for l in link_elements:
@@ -29,7 +31,7 @@ channel_ids = list(set(channel_ids))
 # initialize dataframe
 df = pd.DataFrame()
 
-# get API key -- you can create one at https://console.developers.google.com/apis/credentials
+# get API key for the YouTube Data v3 API -- you can create one at https://console.developers.google.com/apis/credentials
 with open('youtube_api_key.txt', 'r') as f:
     api_key=f.read()
 
@@ -40,6 +42,7 @@ for c in channel_ids:
     full_data = json.loads(r.text)
     print(full_data)
     
+    # try to get a complete row for as many ids as we can
     try:
         row = {}
         row['id'] = full_data['items'][0]['id']
@@ -49,7 +52,8 @@ for c in channel_ids:
         row['videos'] = full_data['items'][0]['statistics']['videoCount']
         row['views'] = full_data['items'][0]['statistics']['viewCount']
         df = df.append(row,ignore_index=True)
-        
+    
+    # if there's an error for any field, we won't keep the row in the mix
     except:
         pass
   
